@@ -2,9 +2,15 @@ import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { config } from "dotenv";
 config();
 
-type LambdaInvocationResult = {
+type LambdaEnvelope<TBody> = {
+    body?: TBody | string;
+    errorMessage?: string;
+    statusCode?: number;
+};
+
+type LambdaInvocationResult<TBody = unknown> = {
     error: string | null;
-    body: Record<string, unknown> | null;
+    body: TBody | null;
     statusCode?: number;
 };
 
@@ -15,7 +21,10 @@ export class LambdaInvoker {
         this.lambdaClient = new LambdaClient({ region: process.env.AWS_REGION });
     }
 
-    async invokeLambda(functionName: string, payload: object): Promise<LambdaInvocationResult> {
+    async invokeLambda<TBody = unknown>(
+        functionName: string,
+        payload: object
+    ): Promise<LambdaInvocationResult<TBody>> {
         const command = new InvokeCommand({
             FunctionName: functionName,
             Payload: Buffer.from(JSON.stringify(payload)),
@@ -24,7 +33,11 @@ export class LambdaInvoker {
 
         try {
             const response = await this.lambdaClient.send(command);
-            const responsePayload = JSON.parse(Buffer.from(response.Payload as Uint8Array).toString());
+            if (!response.Payload) {
+                return { error: "Empty Lambda payload", body: null };
+            }
+
+            const responsePayload = JSON.parse(Buffer.from(response.Payload).toString()) as LambdaEnvelope<TBody>;
             console.log("Respuesta del Lambda:", responsePayload);
 
             if (responsePayload.errorMessage) {
@@ -39,7 +52,7 @@ export class LambdaInvoker {
 
                 return {
                     error: null,
-                    body: parsedBody as Record<string, unknown>,
+                    body: parsedBody ?? null,
                     statusCode: responsePayload.statusCode,
                 };
             }
