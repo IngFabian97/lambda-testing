@@ -44,6 +44,10 @@ Ese comando ejecuta `ClimaLambda.ts`, que invoca la función `Clima`.
 npx playwright test
 ```
 
+## CI
+
+Este repositorio no usa GitHub Actions en este momento. La validación se hace de forma local con `npm start` y `npx playwright test`.
+
 ## Estructura
 
 - `ClimaLambda.ts`: script principal para invocar la Lambda
