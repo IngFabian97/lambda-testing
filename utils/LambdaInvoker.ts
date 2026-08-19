@@ -2,14 +2,20 @@ import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import { config } from "dotenv";
 config();
 
+type LambdaInvocationResult = {
+    error: string | null;
+    body: Record<string, unknown> | null;
+    statusCode?: number;
+};
+
 export class LambdaInvoker {
-    private lambdaCliente : LambdaClient;
+    private lambdaClient: LambdaClient;
 
     constructor() {
-        this.lambdaCliente = new LambdaClient({ region: process.env.AWS_REGION });
+        this.lambdaClient = new LambdaClient({ region: process.env.AWS_REGION });
     }
 
-    async invokeLambda(functionName: string, payload: object): Promise<any> {
+    async invokeLambda(functionName: string, payload: object): Promise<LambdaInvocationResult> {
         const command = new InvokeCommand({
             FunctionName: functionName,
             Payload: Buffer.from(JSON.stringify(payload)),
@@ -17,7 +23,7 @@ export class LambdaInvoker {
         });
 
         try {
-            const response = await this.lambdaCliente.send(command);
+            const response = await this.lambdaClient.send(command);
             const responsePayload = JSON.parse(Buffer.from(response.Payload as Uint8Array).toString());
             console.log("Respuesta del Lambda:", responsePayload);
 
@@ -33,7 +39,7 @@ export class LambdaInvoker {
 
                 return {
                     error: null,
-                    body: parsedBody,
+                    body: parsedBody as Record<string, unknown>,
                     statusCode: responsePayload.statusCode,
                 };
             }
