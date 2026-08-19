@@ -9,9 +9,9 @@ export class LambdaInvoker {
         this.lambdaCliente = new LambdaClient({ region: process.env.AWS_REGION });
     }
 
-    async inovkeLambda(funcitonName: string, payload: object): Promise<any> {
+    async invokeLambda(functionName: string, payload: object): Promise<any> {
         const command = new InvokeCommand({
-            FunctionName: funcitonName,
+            FunctionName: functionName,
             Payload: Buffer.from(JSON.stringify(payload)),
             InvocationType: "RequestResponse",
         });
@@ -26,7 +26,16 @@ export class LambdaInvoker {
                 return { error: responsePayload.errorMessage, body: null };
             } else {
                 console.log("Lambda ejecutado correctamente.");
-                return { error: null, body: responsePayload };
+                const parsedBody =
+                    typeof responsePayload.body === "string"
+                        ? JSON.parse(responsePayload.body)
+                        : responsePayload.body;
+
+                return {
+                    error: null,
+                    body: parsedBody,
+                    statusCode: responsePayload.statusCode,
+                };
             }
         } catch (error) {
             console.error("Error al invocar el Lambda:", error);
