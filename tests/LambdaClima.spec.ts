@@ -6,7 +6,9 @@ test('Probando flujo positivo del lambda Clima', async ({ }) => {
   const lambdaResponse = await lambdaInvoker.invokeLambda("Clima", { city: "Cúcuta" });
   expect(lambdaResponse).toBeDefined();
   expect(lambdaResponse.error).toBeNull();
+  expect(lambdaResponse.body).not.toBeNull();
   const responseBody = lambdaResponse.body;
+  expect(responseBody).toHaveProperty('temperature');
   expect(responseBody.temperature).toBeGreaterThan(0);
   console.log("Temperatura:", responseBody.temperature);
 
